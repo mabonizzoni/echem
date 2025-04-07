@@ -7,21 +7,22 @@ from tkinter import filedialog, simpledialog, messagebox
 # Helper functions #
 ####################
 def extract_data_from_file(file_path):
+    """Extract linear scan voltammetry data from a comma-separated CSV file. Returns voltage, current for that file."""
     with open(file_path, 'r') as file:
         lines = file.readlines()
         
-        # Find the line with 'Potential/V,Current/A'
+        # Find the line with 'Potential/V, Current/A'. Note the space after the comma.
         start_index = 0
         for i, line in enumerate(lines):
             if 'Potential/V, Current/A' in line:
-                start_index = i + 1  # Skip the next blank line
+                start_index = i + 1  # Advance the index by one more line to skip the blank line after the 'Potential/V, Current/A' header.
                 break
              
-        # Extract voltage and current data
+        # Extract voltage and current data from the lines using the start
         voltage_data = []
         current_data = []
         for line in lines[start_index:]:
-            if line.strip():  # Skip any blank lines
+            if line.strip():  # Strip() removes whitespace so, if no data is present, an empty string is returned, which is falsey in Python. So this skips any blank lines.
                 potential, current = line.strip().split(',')
                 voltage_data.append(float(potential))
                 current_data.append(float(current))
@@ -42,6 +43,7 @@ def compare_voltage_lists(voltage1, voltage2, tolerance=1e-4):
 
 
 def import_and_format_data(file_paths):
+    """Calls data extractor on all files in input, checks that voltages are all same, returns all extracted data formatted in a table"""
     all_voltage_data = []
     all_current_data = []
     
@@ -75,6 +77,7 @@ def import_and_format_data(file_paths):
 
 
 def get_unique_filename(output_file_base):
+    """generates a unique file name"""
     output_file = output_file_base + '.csv'
     
     # Check if the file exists
@@ -120,22 +123,50 @@ def save_to_csv(voltage_data, all_current_data, output_file):
 def process_lsv_files():
     # Initialize tkinter
     root = tkinter.Tk()
-    root.withdraw()
-    root.call('wm', 'attributes', '.', '-topmost', True)
+    root.withdraw() # do now show a framework
+    root.call('wm', 'attributes', '.', '-topmost', True) # make sure the dialogs are visible on top of the current window
     
     # Prompt user to select multiple files
+    # Note: The files are NOT returned in the order in which they were selected!
     file_paths = filedialog.askopenfilenames(title="Select CSV files", filetypes=[("CSV files", "*.csv")])
-
-    print(file_paths)
-    
+ 
     if not file_paths:
         print("No files selected. Operation canceled.")
         return
     
     print(f"Selected {len(file_paths)} files.")
+
+    # Extract numbers in parentheses at the end of filenames, so the files can be sorted
+    def extract_number(file_path):
+        # Extract the filename from the path
+        filename = os.path.basename(file_path)
+        
+        # Find numbers in parentheses using string operations
+        # This should be rewritten to use regular expressions
+        try:
+            # Find the last opening parenthesis
+            open_paren = filename.rfind('(')
+            if open_paren != -1:
+                # Find the closing parenthesis after the opening one
+                close_paren = filename.find(')', open_paren)
+                if close_paren != -1:
+                    # Extract the content between parentheses
+                    number_str = filename[open_paren + 1:close_paren]
+                    # Check if it's a number
+                    if number_str.isdigit():
+                        return int(number_str)
+        except:
+            pass
+        
+        # If no number found or error occurred, return a large number to place it at the end
+        return float('inf')
+    # end of the extract_number helper function
     
+    # Sort file paths based on the extracted experiment numbers from the filenames
+    sorted_file_paths = sorted(file_paths, key=extract_number)
+
     # Import and format data
-    voltage_data, all_current_data = import_and_format_data(file_paths)
+    voltage_data, all_current_data = import_and_format_data(sorted_file_paths)
     
     if voltage_data is None:
         print("Operation canceled due to voltage data mismatch.")
@@ -148,6 +179,7 @@ def process_lsv_files():
         return
     
     output_file = get_unique_filename(output_file_base)
+    root.update() # It avoids hung tkinter dialog boxes on MacOS; not needed in Windows
     if output_file:
         save_to_csv(voltage_data, all_current_data, output_file)
     else:
