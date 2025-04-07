@@ -77,15 +77,24 @@ def import_and_format_data(file_paths):
     return reference_voltage, all_current_data
 
 
-def get_unique_filename(output_file_base):
-    """Identifies viable output file name"""
+def get_unique_filename():
+    """
+    Prompts user for a file name, checks if it exists, and handles overwrite confirmations.
+    Returns a valid output filename with .csv extension or None if canceled.
+    """
+    # Initial prompt for filename
+    output_file_base = simpledialog.askstring('Output name', 'Enter file name for output (without extension):')
+    if not output_file_base:
+        print("No output filename provided. Operation canceled.")
+        return None
+    
     output_file = output_file_base + '.csv'
     
     # Check if the file exists
     if os.path.exists(output_file):
         overwrite = messagebox.askyesno("File Exists", f"The file '{output_file}' already exists. Do you want to overwrite it?")
         if overwrite:
-            # Use the 
+            # Use the existing filename
             return output_file
         else:
             # Ask for a new filename
@@ -98,6 +107,7 @@ def get_unique_filename(output_file_base):
                     # If the new name also exists, the loop continues
                 else:
                     # User canceled
+                    print("No alternative filename provided. Operation canceled.")
                     return None
     
     return output_file
@@ -166,13 +176,8 @@ def process_lsv_files():
         return
     
     # Get output filename with validation
-    output_file_base = simpledialog.askstring('Output name', 'Enter file name for output (without extension):')
-    if not output_file_base:
-        print("No output filename provided. Operation canceled.")
-        return
-    
-    output_file = get_unique_filename(output_file_base)
-    root.update() # It avoids hung tkinter dialog boxes on MacOS; not needed in Windows
+    output_file = get_unique_filename()
+    root.update()  # It avoids hung tkinter dialog boxes on MacOS; not needed in Windows
     if output_file:
         save_to_csv(voltage_data, all_current_data, output_file)
     else:
