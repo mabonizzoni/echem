@@ -1,6 +1,7 @@
-import os
-import csv
-import tkinter
+import os      # file operations
+import re      # regular expressions
+import csv     # comma-separated file handling
+import tkinter # dialog boxes
 from tkinter import filedialog, simpledialog, messagebox
 
 ####################
@@ -77,13 +78,14 @@ def import_and_format_data(file_paths):
 
 
 def get_unique_filename(output_file_base):
-    """generates a unique file name"""
+    """Identifies viable output file name"""
     output_file = output_file_base + '.csv'
     
     # Check if the file exists
     if os.path.exists(output_file):
         overwrite = messagebox.askyesno("File Exists", f"The file '{output_file}' already exists. Do you want to overwrite it?")
         if overwrite:
+            # Use the 
             return output_file
         else:
             # Ask for a new filename
@@ -136,32 +138,23 @@ def process_lsv_files():
     
     print(f"Selected {len(file_paths)} files.")
 
-    # Extract numbers in parentheses at the end of filenames, so the files can be sorted
     def extract_number(file_path):
-        # Extract the filename from the path
+        # Extract just the filename from the full path
         filename = os.path.basename(file_path)
         
-        # Find numbers in parentheses using string operations
-        # This should be rewritten to use regular expressions
-        try:
-            # Find the last opening parenthesis
-            open_paren = filename.rfind('(')
-            if open_paren != -1:
-                # Find the closing parenthesis after the opening one
-                close_paren = filename.find(')', open_paren)
-                if close_paren != -1:
-                    # Extract the content between parentheses
-                    number_str = filename[open_paren + 1:close_paren]
-                    # Check if it's a number
-                    if number_str.isdigit():
-                        return int(number_str)
-        except:
-            pass
+        # Find all numbers in parentheses using regular expressions (regex)
+        # \( and \) match literal parentheses
+        # (\d+) captures one or more digits between the parentheses
+        # the r defines a raw string, in which backslashes are interpreted as literals, and not as escape characters
+        # this is handy when specifying regular expressions which often include many backslashes
+        # findall() returns all non-overlapping matches as a list of strings
+        matches = re.findall(r'\((\d+)\)', filename)
         
-        # If no number found or error occurred, return a large number to place it at the end
-        return float('inf')
-    # end of the extract_number helper function
-    
+        # If matches were found, return the last one as an integer
+        # Otherwise return infinity to place the file at the end when sorting
+        return int(matches[-1]) if matches else float('inf')
+    # end of extract_number
+  
     # Sort file paths based on the extracted experiment numbers from the filenames
     sorted_file_paths = sorted(file_paths, key=extract_number)
 
