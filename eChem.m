@@ -102,8 +102,14 @@ ScalingFunctions->{scaleX,scaleY},
 Frame->True,Axes->False,
 FrameStyle->OptionValue[FrameStyle],
 FrameLabel->(Style[#,14]&/@{quantity[[x]],quantity[[y]]}),
-If[$VersionNumber>=13.3,PlotHighlighting->None(*turn off resource-hogging automatic labels, tooltips, etc. in plots*)],
-If[$VersionNumber>=14.3,PlotInteractivity->False(*a newer way to turn off ALL interactive features in plots, including plot highlighting*)]
+Which[
+$VersionNumber>=14.3,
+PlotInteractivity->False(*a newer way to turn off ALL interactive features in plots, including plot highlighting*),
+$VersionNumber>=13.3,
+PlotHighlighting->None(*turn off resource-hogging automatic labels, tooltips, etc. in plots*),
+True,
+Unevaluated[Sequence[]](*if the running version is older than 13.3, effectively return nothing*)
+]
 ],
 Grid[{
 {"datasets",Control[{{indices,Range[1,Length[sampleLabels]],""},MapIndexed[#2[[1]]->#1&,sampleLabels],TogglerBar}]},
