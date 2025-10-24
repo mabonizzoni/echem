@@ -78,7 +78,15 @@ showEIS[dataset_List?(VectorQ[#,AssociationQ]&),opts:OptionsPattern[]]:=showEIS[
 
 showEIS[dataset_List?(VectorQ[#,AssociationQ]&),sampleLabels_List?(VectorQ[#,StringQ]&),OptionsPattern[]]/;Length[dataset]===Length[sampleLabels]:=
 DynamicModule[
-{quantity={"Frequency","Z'","Z\"","Z","Phase"},indices,x,y,biasV,scaleX,scaleY},
+{quantity={"Frequency","Z'","Z\"","Z","Phase"},indices,x,y,biasV,scaleX,scaleY,colordata},
+(*Set the list of colors used for plotting*)
+(*The default plot colors used to be ColorData[97], but changed to ColorData[116] in version 14.2*)
+Which[
+$VersionNumber>=14.2,
+colordata=ColorData["DefaultPlotColors"],
+True,
+colordata=ColorData[97]
+];
 Manipulate[
 ListLinePlot[
 (*The selector function works as follows:
@@ -93,8 +101,7 @@ dataset[[Sort@indices]]
 ],
 PlotLegends->sampleLabels[[Sort@indices]],
 (*This PlotStyle directive forces a constant color for each dataset, even when not all datasets are selected*)
-(*The default plot colors used to be ColorData[97], but changed to ColorData[116] after version 14.1*)
-PlotStyle->(ColorData["DefaultPlotColors"]/@Sort[indices]),
+PlotStyle->(colordata/@Sort[indices]),
 Joined->True,InterpolationOrder->1,
 PlotRange->OptionValue[PlotRange],ImageSize->OptionValue[ImageSize],
 AspectRatio->If[(*Z' is the x axis*)x===2,(*determine AspectRatio that draws proper round circles*)Automatic,(*otherwise use the default*)1/GoldenRatio],
